@@ -44,7 +44,7 @@ function valid(value: unknown): value is Input {
     input.creator.trim().length > 0 &&
     input.creator.length <= 100 &&
     typeof input.url === "string" &&
-    /^https:\/\/(www\\.)?tiktok\\.com\\//i.test(input.url) &&
+    /^https:\/\/(www\.)?tiktok\.com\//i.test(input.url) &&
     input.url.length <= 2048 &&
     ["ID", "GLOBAL"].includes(String(input.region)) &&
     count(input.views) &&
