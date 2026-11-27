@@ -57,8 +57,8 @@ function valid(value: unknown): value is Input {
 }
 
 /**
- * Compare fixed-length SHA-256 digests so the final equality check does not
- * reveal the bearer token's matching prefix or original length.
+ * Compare fixed-length SHA-256 digests and inspect every digest byte without
+ * an early exit. Hashing time can still depend on the supplied input length.
  */
 async function constantTimeTokenMatch(expected: string, provided: string): Promise<boolean> {
   const encoder = new TextEncoder();

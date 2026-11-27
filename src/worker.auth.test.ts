@@ -57,8 +57,8 @@ describe("Worker API authorization", () => {
       new Request("https://worker.test/api/youtube/search?q=tarot"),
       { APP_API_TOKEN: TOKEN },
     );
-    expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ error: "YOUTUBE_API_KEY belum dikonfigurasi" });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized" });
   });
 
   it.each(["", "x", " ".repeat(121)])("rejects an invalid YouTube query (%j) with 400", async (query) => {
