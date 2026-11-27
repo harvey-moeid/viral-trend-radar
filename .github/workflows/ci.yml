@@ -20,5 +20,6 @@ jobs:
       - run: npm install --ignore-scripts
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build\n      - run: npm run licenses
+      - run: npm run build
+      - run: npm run licenses
       - run: npm audit --audit-level=high
