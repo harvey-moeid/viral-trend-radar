@@ -4,21 +4,22 @@ import worker from "./worker";
 describe("Worker health and same-origin policy", () => {
   it("reports D1 connected only after a successful database probe", async () => {
     const all = vi.fn().mockResolvedValue({results:[{ok:1}]});
-    const env = {VTR_DB:{prepare:vi.fn(() => ({all}))}};
-    const response = await worker.fetch(new Request("https://worker.test/api/health"), env);
+    const prepare = vi.fn(() => ({all}));
+    const env = {VTR_DB:{prepare}};
+    const response = await worker.fetch(new Request("https://worker.test/api/health"), env as never);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       ok:true,
       database:true,
       databaseStatus:"connected"
     });
-    expect(env.VTR_DB.prepare).toHaveBeenCalledWith("SELECT 1 AS ok");
+    expect(prepare).toHaveBeenCalledWith("SELECT 1 AS ok");
   });
 
   it("reports D1 unavailable when the probe fails", async () => {
     const all = vi.fn().mockRejectedValue(new Error("database unavailable"));
     const env = {VTR_DB:{prepare:vi.fn(() => ({all}))}};
-    const response = await worker.fetch(new Request("https://worker.test/api/health"), env);
+    const response = await worker.fetch(new Request("https://worker.test/api/health"), env as never);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       ok:true,
