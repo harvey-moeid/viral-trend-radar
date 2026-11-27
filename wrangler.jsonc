@@ -1,0 +1,8 @@
+{
+ "$schema":"node_modules/wrangler/config-schema.json",
+ "name":"viral-trend-radar",
+ "main":"src/worker.ts",
+ "compatibility_date":"2026-11-26",
+ "assets":{"directory":"./dist","binding":"ASSETS","run_worker_first":["/api/*"]},
+ "observability":{"enabled":true}
+}

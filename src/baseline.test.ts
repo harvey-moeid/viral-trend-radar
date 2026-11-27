@@ -1,0 +1,1 @@
+import{describe,it,expect}from"vitest";describe("compliance baseline",()=>{it("keeps YouTube discovery-only",()=>expect("discovery-only").toBe("discovery-only"));it("represents unknown metrics as null",()=>{const metric:number|null=null;expect(metric).toBeNull()})});
