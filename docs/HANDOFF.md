@@ -13,14 +13,17 @@ Updated: 2026-11-27
 2. Worker authorization regression tests: missing/misconfigured/wrong token and input validation.
 3. D1 migration handling: CI applies migrations to isolated local D1; manual production workflow applies pending remote migrations before Worker deploy.
 4. Shared authorization helper and constant-time bearer-token comparison: protected API routes share one `authorize` helper; tokens are compared as fixed-size SHA-256 digests without early-exit byte comparison; auth regression coverage expanded.
+5. YouTube upstream error handling and rate limiting: normalized upstream failures (including non-JSON responses), bounded request rate, and regression coverage.
 
 Merged pull requests:
 - PR #4 — https://github.com/harvey-moeid/viral-trend-radar/pull/4
 - PR #5 — https://github.com/harvey-moeid/viral-trend-radar/pull/5
 - PR #6 — https://github.com/harvey-moeid/viral-trend-radar/pull/6 (audit point 4)
+- PR #8 — https://github.com/harvey-moeid/viral-trend-radar/pull/8 (audit point 5)
 
 ## Current change in progress
-- Audit point 5: YouTube upstream error handling (including non-JSON responses) and rate limiting. Tracked in its own branch and PR.
+- Audit point 6: PWA manifest icons and app-shell cache hardening. Work is isolated in branch `audit/pwa-manifest-icons`; pending CI and owner merge.
+- This change uses scalable SVG icons (standard + maskable). Raster PNG exports and a dedicated Apple Touch PNG are not included in this pass.
 - No production database writes, migrations, or deployment are part of this change.
 
 ## Known architecture and constraints
@@ -44,8 +47,7 @@ npm audit --audit-level=high
 ```
 
 ## Next audit queue
-5. YouTube upstream error handling (including non-JSON responses) and rate limiting (in progress).
-6. PWA manifest icons.
+6. PWA manifest icons and app-shell cache hardening (current PR; awaiting CI/owner merge).
 7. License-audit policy and failure handling.
 8. Minor CORS behavior, D1 health badge, and formatting.
 
