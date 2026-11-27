@@ -1,9 +1,28 @@
+import { createRateLimiter } from "./rate-limit";
+
 export interface Env {
   VTR_DB?: D1Database;
   APP_API_TOKEN?: string;
   YOUTUBE_API_KEY?: string;
   ASSETS?: Fetcher;
 }
+
+const YOUTUBE_TIMEOUT_MS = 8000;
+const YOUTUBE_RATE_LIMIT = 10;
+const YOUTUBE_RATE_WINDOW_MS = 60_000;
+const youtubeLimiter = createRateLimiter(YOUTUBE_RATE_LIMIT, YOUTUBE_RATE_WINDOW_MS);
+
+type YouTubeSearchResponse = {
+  items?: Array<{
+    id?: { videoId?: string };
+    snippet?: {
+      title?: string;
+      channelTitle?: string;
+      publishedAt?: string;
+      thumbnails?: { medium?: { url?: string } };
+    };
+  }>;
+};
 
 type Input = {
   title: string;
@@ -18,10 +37,11 @@ type Input = {
   notes?: string;
 };
 
-const reply = (value: unknown, status = 200) =>
+const reply = (value: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
   new Response(JSON.stringify(value), {
     status,
     headers: {
+      ...extraHeaders,
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
       "access-control-allow-origin": "same-origin",
@@ -152,6 +172,13 @@ async function handle(req: Request, env: Env): Promise<Response> {
       return reply({ error: "Query harus 2–120 karakter" }, 400);
     }
 
+    const limited = youtubeLimiter.check(req.headers.get("cf-connecting-ip") ?? "unknown");
+    if (!limited.allowed) {
+      return reply({ error: "Terlalu banyak permintaan YouTube, coba lagi nanti" }, 429, {
+        "retry-after": String(limited.retryAfterSeconds),
+      });
+    }
+
     const endpoint = new URL("https://www.googleapis.com/youtube/v3/search");
     endpoint.search = new URLSearchParams({
       part: "snippet",
@@ -160,24 +187,38 @@ async function handle(req: Request, env: Env): Promise<Response> {
       q: query,
       key: env.YOUTUBE_API_KEY,
     }).toString();
-    const upstream = await fetch(endpoint);
-    const data = (await upstream.json()) as {
-      items?: Array<{
-        id?: { videoId?: string };
-        snippet?: {
-          title?: string;
-          channelTitle?: string;
-          publishedAt?: string;
-          thumbnails?: { medium?: { url?: string } };
-        };
-      }>;
-    };
+
+    let upstream: Response;
+    try {
+      upstream = await fetch(endpoint, { signal: AbortSignal.timeout(YOUTUBE_TIMEOUT_MS) });
+    } catch (error) {
+      const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+      return timedOut
+        ? reply({ error: "YouTube API timeout" }, 504)
+        : reply({ error: "YouTube API request failed" }, 502);
+    }
+
     if (!upstream.ok) {
+      // Do not parse the error body: it may be HTML or plain text from a proxy.
+      await upstream.body?.cancel().catch(() => undefined);
       return reply(
         { error: upstream.status === 403 ? "YouTube quota/permission error" : "YouTube API request failed" },
         502,
       );
     }
+
+    let data: YouTubeSearchResponse;
+    try {
+      const parsed: unknown = await upstream.json();
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("unexpected shape");
+      data = parsed as YouTubeSearchResponse;
+    } catch {
+      return reply({ error: "YouTube API returned an invalid response" }, 502);
+    }
+    if (data.items !== undefined && !Array.isArray(data.items)) {
+      return reply({ error: "YouTube API returned an invalid response" }, 502);
+    }
+
     const items = (data.items ?? [])
       .filter((item) => item.id?.videoId)
       .map((item) => ({
