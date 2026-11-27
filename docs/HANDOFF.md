@@ -9,21 +9,16 @@ Updated: 2026-11-27
 - Deployment policy: production deployment is manual-only. Never trigger production deployment without explicit owner confirmation.
 
 ## Completed audit work
-1. Lockfile and deterministic install: `package-lock.json`, `npm ci --ignore-scripts`, Node.js 22.
-2. Worker authorization regression tests: missing/misconfigured/wrong token and input validation.
-3. D1 migration handling: CI applies migrations to isolated local D1; manual production workflow applies pending remote migrations before Worker deploy.
+1. Lockfile and deterministic install.
+2. Worker authorization regression tests.
+3. D1 migration handling with isolated local CI migrations and manual production workflow.
 4. Shared authorization helper and constant-time bearer-token comparison.
 5. YouTube upstream error handling and rate limiting, merged in PR #8.
 
-## In progress
-- Audit point 6: PWA manifest icons and app-shell cache hardening, PR #9 (open; owner merge pending).
-- Audit point 7: dependency license policy and CI failure handling, current branch `audit/license-policy`; PR pending.
-
-## Merged pull requests
-- PR #4 — https://github.com/harvey-moeid/viral-trend-radar/pull/4
-- PR #5 — https://github.com/harvey-moeid/viral-trend-radar/pull/5
-- PR #6 — https://github.com/harvey-moeid/viral-trend-radar/pull/6
-- PR #8 — https://github.com/harvey-moeid/viral-trend-radar/pull/8
+## Pending audit PRs
+- Point 6 — PWA manifest icons and app-shell cache hardening: PR #9 (open; merge first).
+- Point 7 — dependency license policy and CI failure handling: PR #10 (open; stacked on PR #9).
+- Point 8 — same-origin CORS behavior, real D1 health probe/badge, and focused formatting: current branch `audit/same-origin-health-check`; PR pending and stacked on point 7.
 
 ## Known architecture and constraints
 - D1 binding: `VTR_DB`; database: `viral-trend-radar-db`.
@@ -32,6 +27,8 @@ Updated: 2026-11-27
 - TikTok research is manual entry only. No scraping, private endpoints, cookies, browser automation, or video downloading.
 - Remote D1 migrations are versioned under `migrations/`. Add a new sequential SQL file for schema changes; do not edit an already-applied migration.
 - Production deploy workflow: GitHub Actions `Deploy Cloudflare Worker`, manual `workflow_dispatch` on `main`, with the production environment gate.
+- The Worker API is same-origin only; it does not emit CORS allow headers.
+- `/api/health` probes D1 using `SELECT 1` and distinguishes connected, unavailable, and unconfigured states.
 
 ## Verification commands
 ```sh
@@ -46,8 +43,9 @@ npm audit --audit-level=high
 ```
 
 ## Next audit queue
-7. Dependency license policy and failure handling (current PR; awaiting CI and owner merge).
-8. Same-origin CORS behavior, real D1 health probe/badge, and targeted formatting.
+- Merge PRs #9, #10, and #11 in order after their CI checks pass.
+- Revisit any license exception when its package version or license expression changes.
+- Do not run remote migrations or deploy production without explicit confirmation.
 
 ## Handoff checklist
 - Check this file and latest PR status before changes.

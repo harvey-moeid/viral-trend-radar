@@ -44,9 +44,6 @@ const reply = (value: unknown, status = 200, extraHeaders: Record<string, string
       ...extraHeaders,
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
-      "access-control-allow-origin": "same-origin",
-      "access-control-allow-methods": "GET,POST,OPTIONS",
-      "access-control-allow-headers": "content-type,authorization",
     },
   });
 
@@ -116,9 +113,20 @@ async function handle(req: Request, env: Env): Promise<Response> {
     (path === "/api/youtube/search" && req.method === "GET");
 
   if (path === "/api/health" && req.method === "GET") {
+    let databaseStatus: "connected" | "unconfigured" | "unavailable" = "unconfigured";
+    if (env.VTR_DB) {
+      try {
+        const probe = await env.VTR_DB.prepare("SELECT 1 AS ok").all<{ ok: number }>();
+        databaseStatus = probe.results?.[0]?.ok === 1 ? "connected" : "unavailable";
+      } catch {
+        databaseStatus = "unavailable";
+      }
+    }
+
     return reply({
       ok: true,
-      database: !!env.VTR_DB,
+      database: databaseStatus === "connected",
+      databaseStatus,
       youtubeDiscovery: !!env.YOUTUBE_API_KEY,
       mode: "discovery-only",
     });
@@ -238,7 +246,10 @@ async function handle(req: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(req: Request, env: Env) {
-    if (req.method === "OPTIONS") return reply(null, 204);
+    if (req.method === "OPTIONS") {
+      // The API is same-origin only. No CORS permission headers are emitted.
+      return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+    }
     try {
       return await handle(req, env);
     } catch {
