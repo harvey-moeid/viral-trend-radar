@@ -6,7 +6,7 @@ function packageNameFromLockPath(lockPath) {
 function licenseTokens(expression) {
   return expression
     .replace(/[()]/g, " ")
-    .split(/\\s+(?:OR|AND)\\s+/i)
+    .split(/\s+(?:OR|AND)\s+/i)
     .map((token) => token.trim())
     .filter(Boolean);
 }
