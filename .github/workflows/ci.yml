@@ -18,6 +18,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install --ignore-scripts
+      - name: Apply non-breaking dependency security updates
+        run: npm audit fix --ignore-scripts
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
