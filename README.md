@@ -9,7 +9,7 @@ React + TypeScript + Vite PWA shell, Cloudflare Worker API, D1, GitHub Actions. 
 
 ## Local
 npm install
-npm run dev
+npm run dev\nnpm run licenses
 
 Copy .dev.vars.example to .dev.vars for local secrets. Configure a D1 binding named VTR_DB in wrangler.jsonc after provisioning. Apply migrations/0001_init.sql.
 
