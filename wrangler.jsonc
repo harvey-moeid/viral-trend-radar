@@ -4,5 +4,8 @@
  "main":"src/worker.ts",
  "compatibility_date":"2026-11-26",
  "assets":{"directory":"./dist","binding":"ASSETS","run_worker_first":["/api/*"]},
+ "d1_databases":[
+  {"binding":"VTR_DB","database_name":"viral-trend-radar-db","database_id":"4dd1913e-ba10-4555-adeb-defa89cefb15"}
+ ],
  "observability":{"enabled":true}
 }
