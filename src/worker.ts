@@ -193,16 +193,28 @@ async function handle(req: Request, env: Env): Promise<Response> {
       upstream = await fetch(endpoint, { signal: AbortSignal.timeout(YOUTUBE_TIMEOUT_MS) });
     } catch (error) {
       const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+      // Log only the error name/message. Never log `endpoint`: its query string contains the API key.
+      console.error("YouTube fetch failed", {
+        timedOut,
+        name: error instanceof Error ? error.name : typeof error,
+        message: error instanceof Error ? error.message : String(error),
+      });
       return timedOut
         ? reply({ error: "YouTube API timeout" }, 504)
-        : reply({ error: "YouTube API request failed" }, 502);
+        : reply({ error: "YouTube API request failed", reason: "network" }, 502);
     }
 
     if (!upstream.ok) {
-      // Do not parse the error body: it may be HTML or plain text from a proxy.
+      // Decision: log and expose the numeric status only. The error body is not parsed
+      // (it may be HTML/plain text from a proxy) and is never echoed to the client.
+      // Typical causes: 400 = API key not valid, 403 = quota/permission, 404/5xx = upstream issue.
+      console.error("YouTube upstream error", { status: upstream.status });
       await upstream.body?.cancel().catch(() => undefined);
       return reply(
-        { error: upstream.status === 403 ? "YouTube quota/permission error" : "YouTube API request failed" },
+        {
+          error: upstream.status === 403 ? "YouTube quota/permission error" : "YouTube API request failed",
+          upstreamStatus: upstream.status,
+        },
         502,
       );
     }

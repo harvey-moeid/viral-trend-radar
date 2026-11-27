@@ -59,18 +59,25 @@ describe("YouTube search upstream handling", () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("returns 502 for a non-JSON error response instead of crashing", async () => {
+  it("returns 502 with upstreamStatus for a non-JSON error response instead of crashing", async () => {
     mockFetch(async () => new Response("<html>Bad gateway</html>", { status: 502 }));
     const response = await search();
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ error: "YouTube API request failed" });
+    expect(await response.json()).toEqual({ error: "YouTube API request failed", upstreamStatus: 502 });
+  });
+
+  it("exposes upstream 400 (invalid API key) as upstreamStatus without leaking the body", async () => {
+    mockFetch(async () => new Response('{"error":{"message":"API key not valid"}}', { status: 400 }));
+    const response = await search();
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "YouTube API request failed", upstreamStatus: 400 });
   });
 
   it("returns the quota error for an upstream 403 with a non-JSON body", async () => {
     mockFetch(async () => new Response("Forbidden", { status: 403 }));
     const response = await search();
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ error: "YouTube quota/permission error" });
+    expect(await response.json()).toEqual({ error: "YouTube quota/permission error", upstreamStatus: 403 });
   });
 
   it("returns 502 when a 200 response is not valid JSON", async () => {
@@ -97,13 +104,13 @@ describe("YouTube search upstream handling", () => {
     expect(await response.json()).toEqual({ items: [], storage: "none", mode: "discovery-only" });
   });
 
-  it("returns 502 when the upstream request fails at the network level", async () => {
+  it("returns 502 with reason=network when the upstream request fails at the network level", async () => {
     mockFetch(async () => {
       throw new TypeError("network down");
     });
     const response = await search();
     expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ error: "YouTube API request failed" });
+    expect(await response.json()).toEqual({ error: "YouTube API request failed", reason: "network" });
   });
 
   it("returns 504 when the upstream request times out", async () => {
