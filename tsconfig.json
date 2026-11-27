@@ -17,8 +17,7 @@
     "strict": true,
     "types": [
       "vite/client",
-      "vitest/globals",
-      "@cloudflare/workers-types"
+      "vitest/globals"
     ]
   },
   "include": [
