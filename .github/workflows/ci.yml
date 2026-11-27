@@ -20,6 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npx wrangler d1 migrations apply viral-trend-radar-db --local --persist-to .wrangler/test-state
+      - run: npx wrangler d1 migrations list viral-trend-radar-db --local --persist-to .wrangler/test-state
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
