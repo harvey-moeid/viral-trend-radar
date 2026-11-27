@@ -12,19 +12,18 @@ Updated: 2026-11-27
 1. Lockfile and deterministic install: `package-lock.json`, `npm ci --ignore-scripts`, Node.js 22.
 2. Worker authorization regression tests: missing/misconfigured/wrong token and input validation.
 3. D1 migration handling: CI applies migrations to isolated local D1; manual production workflow applies pending remote migrations before Worker deploy.
-4. Shared authorization helper and constant-time bearer-token comparison: protected API routes share one `authorize` helper; tokens are compared as fixed-size SHA-256 digests without early-exit byte comparison; auth regression coverage expanded.
-5. YouTube upstream error handling and rate limiting: normalized upstream failures (including non-JSON responses), bounded request rate, and regression coverage.
+4. Shared authorization helper and constant-time bearer-token comparison.
+5. YouTube upstream error handling and rate limiting, merged in PR #8.
 
-Merged pull requests:
+## In progress
+- Audit point 6: PWA manifest icons and app-shell cache hardening, PR #9 (open; owner merge pending).
+- Audit point 7: dependency license policy and CI failure handling, current branch `audit/license-policy`; PR pending.
+
+## Merged pull requests
 - PR #4 — https://github.com/harvey-moeid/viral-trend-radar/pull/4
 - PR #5 — https://github.com/harvey-moeid/viral-trend-radar/pull/5
-- PR #6 — https://github.com/harvey-moeid/viral-trend-radar/pull/6 (audit point 4)
-- PR #8 — https://github.com/harvey-moeid/viral-trend-radar/pull/8 (audit point 5)
-
-## Current change in progress
-- Audit point 6: PWA manifest icons and app-shell cache hardening. Work is isolated in branch `audit/pwa-manifest-icons`; pending CI and owner merge.
-- This change uses scalable SVG icons (standard + maskable). Raster PNG exports and a dedicated Apple Touch PNG are not included in this pass.
-- No production database writes, migrations, or deployment are part of this change.
+- PR #6 — https://github.com/harvey-moeid/viral-trend-radar/pull/6
+- PR #8 — https://github.com/harvey-moeid/viral-trend-radar/pull/8
 
 ## Known architecture and constraints
 - D1 binding: `VTR_DB`; database: `viral-trend-radar-db`.
@@ -47,13 +46,11 @@ npm audit --audit-level=high
 ```
 
 ## Next audit queue
-6. PWA manifest icons and app-shell cache hardening (current PR; awaiting CI/owner merge).
-7. License-audit policy and failure handling.
-8. Minor CORS behavior, D1 health badge, and formatting.
+7. Dependency license policy and failure handling (current PR; awaiting CI and owner merge).
+8. Same-origin CORS behavior, real D1 health probe/badge, and targeted formatting.
 
-## Handoff checklist for the next session
-- Check this file and the latest PR status before making changes.
-- Start from latest `main` after the previous PR is merged.
-- Keep each audit item isolated in its own branch and PR.
-- Wait for CI to pass; do not merge on the user's behalf.
+## Handoff checklist
+- Check this file and latest PR status before changes.
+- Keep audit items isolated in sequential branches/PRs.
+- Wait for CI; do not merge on the user's behalf.
 - Do not run remote migrations or deploy production without explicit confirmation.
