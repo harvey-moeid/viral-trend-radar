@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "cf:dev": "wrangler dev",
-    "cf:deploy": "wrangler deploy"
+    "cf:deploy": "wrangler deploy",
+    "licenses": "node scripts/license-audit.mjs"
   },
   "dependencies": {
     "react": "18.3.1",
