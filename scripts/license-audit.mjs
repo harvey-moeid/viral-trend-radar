@@ -1,31 +1,41 @@
 import fs from "node:fs";
 import path from "node:path";
-const root=path.resolve("node_modules");
-const seen=new Set();
-const packages=[];
-function walk(dir){
-  if(!fs.existsSync(dir))return;
-  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
-    if(!entry.isDirectory())continue;
-    const full=path.join(dir,entry.name);
-    if(entry.name.startsWith("@")){walk(full);continue;}
-    const file=path.join(full,"package.json");
-    if(fs.existsSync(file)&&!seen.has(file)){
-      seen.add(file);
-      try{
-        const p=JSON.parse(fs.readFileSync(file,"utf8"));
-        const license=typeof p.license==="string"?p.license:(Array.isArray(p.licenses)?p.licenses.map(x=>x.type).join(" OR "):"UNKNOWN");
-        packages.push({name:p.name??entry.name,version:p.version??"?",license});
-      }catch{packages.push({name:entry.name,version:"?",license:"UNKNOWN"})}
-    }
-    walk(path.join(full,"node_modules"));
+import { auditLockfile } from "./license-policy.mjs";
+
+const root = process.cwd();
+const lockPath = path.join(root, "package-lock.json");
+const policyPath = path.join(root, "scripts", "license-policy.json");
+
+let lockfile;
+let policy;
+try {
+  lockfile = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+  policy = JSON.parse(fs.readFileSync(policyPath, "utf8"));
+} catch (error) {
+  console.error("License audit configuration could not be read:", error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}
+
+const result = auditLockfile(lockfile, policy);
+console.log("Dependency license policy audit");
+console.log("Total dependencies: " + result.total);
+console.log("Allowlisted: " + result.allowed.length);
+console.log("Explicit review exceptions: " + result.reviews.length);
+
+if (result.reviews.length) {
+  console.warn("\nDependencies covered by exact, version-pinned review exceptions:");
+  for (const item of result.reviews) {
+    console.warn("- " + item.name + "@" + item.version + ": " + item.license +
+      " [dev=" + item.devOnly + ", optional=" + item.optional + "] — " + item.reason);
   }
 }
-walk(root);
-const counts=new Map();
-for(const p of packages)counts.set(p.license,(counts.get(p.license)??0)+1);
-console.log("Installed dependency license inventory");
-for(const [license,count] of [...counts].sort((a,b)=>a[0].localeCompare(b[0])))console.log(String(count).padStart(4),license);
-const unknown=packages.filter(p=>p.license==="UNKNOWN"||p.license==="UNLICENSED");
-if(unknown.length){console.error("\nPackages requiring manual license verification:");for(const p of unknown)console.error(p.name+"@"+p.version);process.exitCode=1;}
-console.log("\nTotal packages:",packages.length);
+
+if (result.errors.length) {
+  console.error("\nLicense policy violations:");
+  for (const item of result.errors) {
+    console.error("- " + item.name + "@" + item.version + ": " + item.license + " — " + item.reason);
+  }
+  process.exitCode = 1;
+} else {
+  console.log("\nPASS: every locked dependency is allowlisted or has an exact review exception.");
+}
