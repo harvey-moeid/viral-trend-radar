@@ -26,3 +26,6 @@ Do not execute migration SQL manually in a deployed database. Add schema changes
 Deploy is manual-only through GitHub Actions (`workflow_dispatch`) on `main`. The workflow applies pending remote D1 migrations before deploying the Worker. Cloudflare captures a D1 backup when applying migrations. Configure GitHub production environment secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
 Worker secrets: `APP_API_TOKEN` and optional `YOUTUBE_API_KEY`. Do not enable public production use until authentication is protected by Cloudflare Access or equivalent.
+
+## Project handoff
+See [docs/HANDOFF.md](docs/HANDOFF.md) for completed audit items, current work, operational constraints, verification commands, and the next audit queue.
